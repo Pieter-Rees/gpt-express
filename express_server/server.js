@@ -10,37 +10,39 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const app = express();
 app.use(express.json());
 
-app.use(session({
+app.use(
+  session({
     // Session secret, for simplicity sake is set to the OPENAI_API_KEY, I'd recomend changing this to a dedicated enviroment variable for more security, however this is an example to resolve issue 15.
     secret: process.env.OPENAI_API_KEY,
     resave: false,
-    saveUninitialized: true
-}));
+    saveUninitialized: true,
+  })
+);
 
 function CREATE_GPT_INSTANCE() {
-    // Create a new instance / context of EasyGpt
-    const gpt = new EasyGpt();
+  // Create a new instance / context of EasyGpt
+  const gpt = new EasyGpt();
 
-    // ----------------------------
-    // Using the easygpt npm module
-    // Sample gpt object handling
-    // --------------------------
+  // ----------------------------
+  // Using the easygpt npm module
+  // Sample gpt object handling
+  // --------------------------
 
-    gpt
+  gpt
     .setApiKey(OPENAI_API_KEY)
     .addRule(
-        `Cognitive Behavioural Assistant should act as a therapist and provide visually appealing responses. Use phrases commonly associated with therapists,
+      `Cognitive Behavioural Assistant should act as a therapist and provide visually appealing responses. Use phrases commonly associated with therapists,
         such as 'How does that make you feel?' or 'Tell me more about that.' PERSONALIZE responses to the user's input and emotional state.
         Ensure responses are grammatically correct and written in a professional yet conversational tone. Provide timely responses without significant delay.`
     )
     .addRule("Use emoticons in every answer and super often.")
     .addMessage("Hello! How are you");
 
-    // Advanced gpt object handling (optional)
-    gpt.advanced.setMaxTokens(100);
-    gpt.advanced.setTemperature(1.5);
+  // Advanced gpt object handling (optional)
+  gpt.advanced.setMaxTokens(100);
+  gpt.advanced.setTemperature(1.5);
 
-    return gpt;
+  return gpt;
 }
 
 // // Sample single response handling
@@ -56,7 +58,7 @@ const sessions = {};
 // @desc Ask ChatGPT API with a request body and multiple messages
 //       Can be tested quickly with the attached Postman collection
 app.post("/askgpt", async (req, res) => {
-  if(!sessions[req.session.id]) {
+  if (!sessions[req.session.id]) {
     // If no instance exists create one for that session ID.
     sessions[req.session.id] = CREATE_GPT_INSTANCE();
   }
@@ -66,9 +68,11 @@ app.post("/askgpt", async (req, res) => {
 
   const messages = req.body.messages;
 
+  console.log(messages);
+
   try {
     const responses = await Promise.all(
-      messages.map(async message => {
+      messages.map(async (message) => {
         gpt.addMessage(message.content);
         return await gpt.ask();
       })
@@ -76,7 +80,7 @@ app.post("/askgpt", async (req, res) => {
 
     const answers = responses
       .filter((response, index) => messages[index].role !== "system")
-      .map(response => response.content);
+      .map((response) => response.content);
 
     console.log(answers);
 
